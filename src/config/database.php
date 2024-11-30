@@ -1,6 +1,6 @@
 <?php
 class Database {
-    private $host = "localhost:3307";  // Updated port number
+    private $host = "localhost:3306";  // Updated port number
     private $database = "inventorytrackflow";
     private $username = "root";
     private $password = "";

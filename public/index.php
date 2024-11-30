@@ -1,5 +1,4 @@
 <?php
-// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -11,9 +10,17 @@ header("Content-Type: application/json");
 require_once __DIR__ . "/../src/config/database.php";
 require_once __DIR__ . "/../src/controllers/InventoryController.php";
 
-// Handle preflight requests
-if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
-    http_response_code(200);
+// For debugging
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_SERVER['PATH_INFO'])) {
+    echo json_encode([
+        "status" => "success",
+        "message" => "API is working",
+        "debug" => [
+            "request_uri" => $_SERVER['REQUEST_URI'],
+            "method" => $_SERVER['REQUEST_METHOD'],
+            "server" => $_SERVER
+        ]
+    ]);
     exit();
 }
 
@@ -28,54 +35,27 @@ if (!$db) {
 
 $controller = new InventoryController($db);
 
-// Get the request URI and remove query string
-$request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-// Remove base path
+// Get the request path
+$request_uri = $_SERVER['REQUEST_URI'];
 $base_path = '/InventoryTrackFlow-API/public';
-$path = substr($request_uri, strlen($base_path));
+$path = str_replace($base_path, '', $request_uri);
 $path = trim($path, '/');
 
-// Debug information
-if (empty($path)) {
-    http_response_code(200);
-    echo json_encode([
-        "status" => "success",
-        "message" => "API is working",
-        "debug" => [
-            "request_uri" => $_SERVER['REQUEST_URI'],
-            "path" => $path,
-            "method" => $_SERVER['REQUEST_METHOD']
-        ]
-    ]);
-    exit();
-}
-
-// Split the path into segments
-$segments = explode('/', $path);
-$endpoint = $segments[0] ?? '';
-
 try {
-    switch($_SERVER['REQUEST_METHOD']) {
-        case 'GET':
-            if ($endpoint === 'products') {
+    if ($path === 'products') {
+        switch($_SERVER['REQUEST_METHOD']) {
+            case 'GET':
                 $controller->getProducts();
-            } else {
-                throw new Exception("Invalid endpoint: " . $endpoint);
-            }
-            break;
-            
-        case 'POST':
-            if ($endpoint === 'products') {
+                break;
+            case 'POST':
                 $data = json_decode(file_get_contents("php://input"));
                 $controller->createProduct($data);
-            } else {
-                throw new Exception("Invalid endpoint: " . $endpoint);
-            }
-            break;
-            
-        default:
-            throw new Exception("Method not allowed: " . $_SERVER['REQUEST_METHOD']);
+                break;
+            default:
+                throw new Exception("Method not allowed");
+        }
+    } else {
+        throw new Exception("Invalid endpoint: " . $path);
     }
 } catch (Exception $e) {
     http_response_code(400);
@@ -85,7 +65,6 @@ try {
         "debug" => [
             "request_uri" => $_SERVER['REQUEST_URI'],
             "path" => $path,
-            "endpoint" => $endpoint,
             "method" => $_SERVER['REQUEST_METHOD']
         ]
     ]);
