@@ -10,19 +10,6 @@ header("Content-Type: application/json");
 require_once __DIR__ . "/../src/config/database.php";
 require_once __DIR__ . "/../src/controllers/InventoryController.php";
 
-// For debugging
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && empty($_SERVER['PATH_INFO'])) {
-    echo json_encode([
-        "status" => "success",
-        "message" => "API is working",
-        "debug" => [
-            "request_uri" => $_SERVER['REQUEST_URI'],
-            "method" => $_SERVER['REQUEST_METHOD'],
-            "server" => $_SERVER
-        ]
-    ]);
-    exit();
-}
 
 $database = new Database();
 $db = $database->getConnection();
@@ -40,6 +27,12 @@ $request_uri = $_SERVER['REQUEST_URI'];
 $base_path = '/InventoryTrackFlow-API/public';
 $path = str_replace($base_path, '', $request_uri);
 $path = trim($path, '/');
+
+// Remove query parameters if any
+if (($pos = strpos($path, '?')) !== false) {
+    $path = substr($path, 0, $pos);
+}
+
 
 try {
     if ($path === 'products') {
