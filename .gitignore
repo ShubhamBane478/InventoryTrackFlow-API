@@ -1,0 +1,13 @@
+# Ignore configuration files containing sensitive data
+.env
+
+# Ignore system files
+.DS_Store
+
+# Ignore log files and temporary files
+*.log
+tmp/
+cache/
+
+# Ignore vendor or dependencies if using a package manager (e.g., Composer)
+vendor/
